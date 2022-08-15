@@ -66,12 +66,8 @@ let createShortUrl = async function (req, res) {
         
 
 
-        let cachedShortUrlData = await GET_ASYNC(`${longUrl}`)
-        if (cachedShortUrlData) {
-
-            res.status(200).send({ status: true, message: "url already exists", data: JSON.parse(cachedShortUrlData) })
-        }
-        else {
+        
+        
             let urlFound = false;
             let object = {
                 method: "get",
@@ -82,25 +78,36 @@ let createShortUrl = async function (req, res) {
                   if (res.status == 201 || res.status == 200) urlFound = true;
                 })
                 .catch((err) => {});
-          
+              
               if (urlFound == false) {
                 return res.status(400).send({ status: false, message: "Invalid URL" });
               }
-            let urlCode = shortid.generate(longUrl)
+            
+              let longurl=await urlModel.findOne({longUrl:longUrl})
+              if(longurl){
+                return res.status(200).send({ status: true, data:longurl });
+              }
 
+             else{
+
+            let urlCode = shortid.generate()
+            let urlcode= await urlModel.findOne({urlCode:urlCode})
+              if(urlcode){
+                urlCode=urlCode + shortid.generate()
+              }
             let shortUrl = `http://localhost:3000/${urlCode}`
            
     
             let data = await urlModel.create({ longUrl: longUrl, urlCode: urlCode, shortUrl: shortUrl })
-
-            let responseData = await urlModel.findOne({ longUrl: longUrl }).select({ _id: 0, __v: 0 })
-
-            await SET_ASYNC(`${longUrl}`, JSON.stringify(responseData))
-
-            return res.status(201).send({ status: true, data: responseData })
+             data=data.toObject()
+             delete(data._id)
+             delete(data.__v)
+              
+             return res.status(201).send({ status: true, data: data })
+             }
         }
 
-    }
+    
     catch (err) {
         return res.status(500).send({ status: false, message: err })
     }
