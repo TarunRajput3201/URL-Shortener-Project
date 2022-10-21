@@ -3,7 +3,7 @@ const urlModel = require("../models/urlModel");
 let shortid = require("shortid")
 const redis = require("redis");
 const { promisify } = require("util");
-const axios=require("axios")
+const axios = require("axios")
 
 const validateRequest = function (value) {
     if (Object.keys(value).length == 0) {
@@ -62,52 +62,54 @@ let createShortUrl = async function (req, res) {
 
         if (!longUrl) { return res.status(400).send({ status: false, message: "please provide longUrl" }) }
         // if (!isValidURL(longUrl)) { return res.status(400).send({ status: false, message: "please provide a valid url" }) }
-          
-        
 
 
-        
-        
-            let urlFound = false;
-            let object = {
-                method: "get",
-                url:longUrl
-              };
-              await axios(object)
-                .then((res) => {
-                  if (res.status == 201 || res.status == 200) urlFound = true;
-                })
-                .catch((err) => {});
-              
-              if (urlFound == false) {
-                return res.status(400).send({ status: false, message: "Invalid URL" });
-              }
-            
-              let longurl=await urlModel.findOne({longUrl:longUrl})
-              if(longurl){
-                return res.status(200).send({ status: true, data:longurl });
-              }
 
-             else{
 
-            let urlCode = shortid.generate()
-            let urlcode= await urlModel.findOne({urlCode:urlCode})
-              if(urlcode){
-                urlCode=urlCode + shortid.generate()
-              }
-            let shortUrl = `http://localhost:3000/${urlCode}`
-           
-    
-            let data = await urlModel.create({ longUrl: longUrl, urlCode: urlCode, shortUrl: shortUrl })
-             data=data.toObject()
-             delete(data._id)
-             delete(data.__v)
-              
-             return res.status(201).send({ status: true, data: data })
-             }
+
+
+        let urlFound = false;
+        let object = {
+            method: "get",
+            url: longUrl
+        };
+        await axios(object)
+            .then((res) => {
+                if (res.status == 201 || res.status == 200) {
+                    urlFound = true;
+                }
+            })
+            .catch((err) => { });
+
+        if (urlFound == false) {
+            return res.status(400).send({ status: false, message: "Invalid URL" });
         }
 
-    
+        let longurl = await urlModel.findOne({ longUrl: longUrl })
+        if (longurl) {
+            return res.status(200).send({ status: true, data: longurl });
+        }
+
+        else {
+
+            let urlCode = shortid.generate()
+            let urlcode = await urlModel.findOne({ urlCode: urlCode })
+            if (urlcode) {
+                urlCode = urlCode + shortid.generate()
+            }
+            let shortUrl = `http://localhost:3000/${urlCode}`
+
+
+            let data = await urlModel.create({ longUrl: longUrl, urlCode: urlCode, shortUrl: shortUrl })
+            data = data.toObject()
+            delete (data._id)
+            delete (data.__v)
+
+            return res.status(201).send({ status: true, data: data })
+        }
+    }
+
+
     catch (err) {
         return res.status(500).send({ status: false, message: err })
     }
@@ -116,7 +118,7 @@ let getUrl = async function (req, res) {
     try {
         let urlCode = req.params.urlCode
         let cachedUrlData = await GET_ASYNC(`${urlCode}`)
-        
+
         if (cachedUrlData) {
 
             res.status(302).redirect(cachedUrlData)
